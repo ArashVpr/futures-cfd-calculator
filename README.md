@@ -1,3 +1,8 @@
+![image](https://github.com/user-attachments/assets/ae232405-7f5c-4d89-9f40-d2d11ee9658a)
+
+![image](https://github.com/user-attachments/assets/9ba2d78a-d4f4-4419-a43e-d173e91e4a0d)
+
+
 **📈 Futures vs CFD Price Difference Calculator**
 
 This Streamlit app helps traders compare the latest prices of selected futures contracts and their CFD equivalents. It calculates the price difference (spread) and helps you adjust your trading levels accordingly.
