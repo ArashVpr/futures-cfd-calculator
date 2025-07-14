@@ -1,6 +1,18 @@
 import yfinance as yf
 import streamlit as st
 
+import time
+
+# --- Auto-refresh every 13 minutes ---
+REFRESH_INTERVAL = 13 * 60  # seconds
+if 'last_refresh' not in st.session_state:
+    st.session_state['last_refresh'] = time.time()
+else:
+    elapsed = time.time() - st.session_state['last_refresh']
+    if elapsed > REFRESH_INTERVAL:
+        st.session_state['last_refresh'] = time.time()
+        st.experimental_rerun()
+
 st.set_page_config(page_title="Futures vs CFD Price Calculator", layout="centered")
 
 st.title("📈 Futures vs CFD Price Difference Calculator")
