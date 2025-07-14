@@ -152,9 +152,9 @@ if st.button("Calculate Difference", use_container_width=True):
 
             if cfd_symbol in inverted_pairs and cfd_price != 0:
                 # For inverted pairs, convert futures entry/SL/profit to CFD price by 1/value, then apply spread
-                adj_entry = (1 / entry_price - spread) if entry_price > 0 else None
-                adj_sl = (1 / stop_loss - spread) if stop_loss > 0 else None
-                adj_profit = (1 / profit - spread) if profit > 0 else None
+                adj_entry = 1 / (entry_price - spread) if entry_price > 0 else None
+                adj_sl = 1 / (stop_loss - spread) if stop_loss > 0 else None
+                adj_profit = 1 / (profit - spread) if profit > 0 else None
             else:
                 adj_entry = entry_price - spread if entry_price > 0 else None
                 adj_sl = stop_loss - spread if stop_loss > 0 else None
