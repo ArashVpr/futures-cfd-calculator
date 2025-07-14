@@ -111,11 +111,11 @@ with st.expander("🔧 Adjust Your Trade Levels by Spread", expanded=True):
     st.markdown("Enter your planned trade levels for the **futures** instrument. The app will show the equivalent CFD levels after applying the spread.")
     col_entry, col_sl, col_profit = st.columns(3)
     with col_entry:
-        entry_price = st.number_input("Entry Price", min_value=0.0, step=0.0001, format="%.4f", help="Your planned entry price for the futures instrument.")
+        entry_price = st.number_input("Entry Price", min_value=0.0, step=0.000001, format="%.4f", help="Your planned entry price for the futures instrument.")
     with col_sl:
-        stop_loss = st.number_input("Stop Loss", min_value=0.0, step=0.0001, format="%.4f", help="Your planned stop loss for the futures instrument.")
+        stop_loss = st.number_input("Stop Loss", min_value=0.0, step=0.000001, format="%.4f", help="Your planned stop loss for the futures instrument.")
     with col_profit:
-        profit = st.number_input("Profit Target", min_value=0.0, step=0.0001, format="%.4f", help="Your planned profit target for the futures instrument.")
+        profit = st.number_input("Profit Target", min_value=0.0, step=0.000001, format="%.4f", help="Your planned profit target for the futures instrument.")
 
 st.markdown("---")
 
