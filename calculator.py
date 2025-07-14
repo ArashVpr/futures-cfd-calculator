@@ -12,6 +12,10 @@ else:
     if elapsed > REFRESH_INTERVAL:
         st.session_state['last_refresh'] = time.time()
         st.experimental_rerun()
+    else:
+        remaining = int(REFRESH_INTERVAL - elapsed)
+        mins, secs = divmod(remaining, 60)
+        st.caption(f"⏳ Auto-refresh in {mins}m {secs}s")
 
 st.set_page_config(page_title="Futures vs CFD Price Calculator", layout="centered")
 
