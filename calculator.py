@@ -136,7 +136,7 @@ if st.button("Calculate Difference", use_container_width=True):
                 if cfd_symbol in inverted_pairs and cfd_price != 0:
                     cfd_price = 1 / cfd_price
 
-        spread = fut_price - cfd_price
+        spread = abs(fut_price - cfd_price) # Absolute value
 
         st.success("Prices fetched successfully!")
         st.markdown("### 📊 Price Comparison")
