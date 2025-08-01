@@ -328,7 +328,6 @@ with st.container(border=True):
         "Calculate Delta",
         use_container_width=True,
         type="primary",
-        help="Calculate the price difference and adjusted CFD levels"
     )
 
 # --- Results Section ---
@@ -393,8 +392,11 @@ if calculate_clicked:
 
             # Show adjusted levels only if user entered any trading levels
             if entry_price > 0 or stop_loss > 0 or profit > 0:
-                st.markdown("### Adjusted CFD Levels")
-                st.info("Use these adjusted levels for your CFD trades to match your futures strategy.")
+                st.markdown("---")  # Visual separator
+                st.markdown("### 🎯 Your CFD Trading Levels")
+                
+                # Enhanced info box with better styling
+                # st.success("✅ **Ready to Trade!** Use these exact levels for your CFD positions to match your futures strategy.")
 
                 if cfd_symbol in inverted_pairs and cfd_price != 0:
                     adj_entry = 1 / (entry_price - spread) if entry_price > 0 else None
@@ -405,37 +407,52 @@ if calculate_clicked:
                     adj_sl = stop_loss - spread if stop_loss > 0 else None
                     adj_profit = profit - spread if profit > 0 else None
 
-                col_adj_entry, col_adj_sl, col_adj_profit = st.columns(3, gap="medium")
+                # Create highlighted container for the trading levels
+                with st.container(border=True):
+                    
+                    col_adj_entry, col_adj_sl, col_adj_profit = st.columns(3, gap="medium")
+                    
+                    with col_adj_entry:
+                        if adj_entry is not None and entry_price > 0:
+                            st.markdown("**🔵 ENTRY PRICE**")
+                            entry_value = format_price(adj_entry, selected_category)
+                            
+                            # Display clean number for copying
+                            clean_entry = entry_value.replace(',', '')
+                            st.code(clean_entry, language=None)
+                        else:
+                            st.markdown("**🔵 ENTRY PRICE**")
+                            st.markdown("### `—`")
+                            st.caption("No entry price set")
+                    
+                    with col_adj_sl:
+                        if adj_sl is not None and stop_loss > 0:
+                            st.markdown("**🔴 STOP LOSS**")
+                            sl_value = format_price(adj_sl, selected_category)
+                            
+                            # Display clean number for copying
+                            clean_sl = sl_value.replace(',', '')
+                            st.code(clean_sl, language=None)
+                        else:
+                            st.markdown("**🔴 STOP LOSS**")
+                            st.markdown("### `—`")
+                            st.caption("No stop loss set")
+                    
+                    with col_adj_profit:
+                        if adj_profit is not None and profit > 0:
+                            st.markdown("**🟢 TAKE PROFIT**")
+                            tp_value = format_price(adj_profit, selected_category)
+                            
+                            # Display clean number for copying
+                            clean_tp = tp_value.replace(',', '')
+                            st.code(clean_tp, language=None)
+                        else:
+                            st.markdown("**🟢 TAKE PROFIT**")
+                            st.markdown("### `—`")
+                            st.caption("No take profit set")
                 
-                with col_adj_entry:
-                    if adj_entry is not None and entry_price > 0:
-                        st.metric(
-                            "Adjusted Entry",
-                            format_price(adj_entry, selected_category),
-                            help="CFD entry price adjusted for spread"
-                        )
-                    else:
-                        st.metric("Adjusted Entry", "—", help="No entry price set")
-                
-                with col_adj_sl:
-                    if adj_sl is not None and stop_loss > 0:
-                        st.metric(
-                            "Adjusted Stop Loss",
-                            format_price(adj_sl, selected_category),
-                            help="CFD stop loss adjusted for spread"
-                        )
-                    else:
-                        st.metric("Adjusted Stop Loss", "—", help="No stop loss set")
-                
-                with col_adj_profit:
-                    if adj_profit is not None and profit > 0:
-                        st.metric(
-                            "Adjusted Take Profit",
-                            format_price(adj_profit, selected_category),
-                            help="CFD take profit adjusted for spread"
-                        )
-                    else:
-                        st.metric("Adjusted Take Profit", "—", help="No take profit set")
+                # Add a summary box
+                st.info(f"💡 **Spread Adjustment Applied:** {format_price(spread, selected_category)} price difference factored into all levels.")
 
     except Exception as e:
         st.error(f"Calculation Error: {str(e)}")
