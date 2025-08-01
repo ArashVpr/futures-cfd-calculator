@@ -1,29 +1,21 @@
 import yfinance as yf
 import streamlit as st
-
 import time
 
-# --- Auto-refresh every 13 minutes ---
-REFRESH_INTERVAL = 13 * 60  # seconds
-if 'last_refresh' not in st.session_state:
-    st.session_state['last_refresh'] = time.time()
-else:
-    elapsed = time.time() - st.session_state['last_refresh']
-    if elapsed > REFRESH_INTERVAL:
-        st.session_state['last_refresh'] = time.time()
-        st.experimental_rerun()
-    else:
-        remaining = int(REFRESH_INTERVAL - elapsed)
-        mins, secs = divmod(remaining, 60)
-        st.caption(f"⏳ Auto-refresh in {mins}m {secs}s")
+# Cache timeout for fetched prices (30 seconds)
+CACHE_TIMEOUT = 30
 
-st.set_page_config(page_title="Futures vs CFD Price Calculator", layout="centered")
+st.set_page_config(
+    page_title="Futures vs CFD Calculator", 
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-st.title("📈 Futures vs CFD Price Difference Calculator")
+st.title("Futures vs CFD Calculator")
+st.markdown("**Compare futures and CFD prices to optimize your trading levels**")
 
-st.markdown("""
-This app fetches the **latest prices** of a selected **FUTURES contract** and its **CFD equivalent** to calculate the price difference and help you adjust your trading levels accordingly.
-""")
+# Add visual separator
+st.markdown("---")
 
 # --- Symbol Categories and Mappings ---
 symbol_categories = {
@@ -92,105 +84,342 @@ for category in symbol_categories.values():
         symbol_lookup[name_with_ticker] = ticker
 
 # --- Symbol input ---
-col1, col2 = st.columns(2)
-
-with col1:
-    selected_category = st.selectbox("Category", list(symbol_categories.keys()), index=0)
-    futures_label = st.selectbox("Futures Instrument", list(symbol_categories[selected_category].keys()))
+st.markdown("## 1. Select Instrument")
+with st.container(border=True):
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_category = st.selectbox(
+            "Market Category",
+            list(symbol_categories.keys()),
+            index=0,
+            help="Choose the type of futures market"
+        )
+    with col2:
+        futures_label = st.selectbox(
+            "Futures Contract",
+            list(symbol_categories[selected_category].keys()),
+            help="Select the specific futures instrument"
+        )
+    
     futures_symbol = symbol_lookup.get(futures_label, futures_label)
-    if futures_symbol:
-        try:
-            fut_price_preview = yf.Ticker(futures_symbol).history(period="1d", interval="1m").Close.dropna().iloc[-1]
-            st.caption(f"**Futures Current Price:** {fut_price_preview}")
-        except:
-            st.caption(":grey_question: Could not fetch preview price.")
-
-manual_cfd_price = None
-
-with col2:
     cfd_symbol = symbol_map.get(futures_label, "")
-    if cfd_symbol:
-        st.text_input("CFD Symbol", value=cfd_symbol, key="cfd_input", disabled=True, help="Auto-filled CFD symbol")
-        try:
-            cfd_price_preview = yf.Ticker(cfd_symbol).history(period="1d", interval="1m").Close.dropna().iloc[-1]
-            st.caption(f"**CFD Current Price:** {cfd_price_preview}")
-        except:
-            st.caption(":grey_question: Could not fetch preview price.")
-    else:
-        manual_cfd_price = st.number_input("Enter CFD Price manually", min_value=0.0, step=0.01, help="No CFD equivalent available for this instrument.")
-        st.caption(":grey_exclamation: No CFD equivalent available for this instrument.")
+    
+    st.info(f"**Associated CFD:** `{cfd_symbol if cfd_symbol else 'N/A'}`")
 
-st.markdown("---")
+# --- Price Configuration ---
+st.markdown("## 2. Configure Prices")
+with st.container(border=True):
+    col1, col2 = st.columns(2, gap="medium")
 
-# --- User Entry Fields for Price Calculations ---
-with st.expander("🔧 Adjust Your Trade Levels by Spread", expanded=True):
-    st.markdown("Enter your planned trade levels for the **futures** instrument. The app will show the equivalent CFD levels after applying the spread.")
-    col_entry, col_sl, col_profit = st.columns(3)
-    with col_entry:
-        entry_price = st.number_input("Entry Price", min_value=0.0, step=0.000001, format="%.6f", help="Your planned entry price for the futures instrument.")
-    with col_sl:
-        stop_loss = st.number_input("Stop Loss", min_value=0.0, step=0.000001, format="%.6f", help="Your planned stop loss for the futures instrument.")
-    with col_profit:
-        profit = st.number_input("Profit Target", min_value=0.0, step=0.000001, format="%.6f", help="Your planned profit target for the futures instrument.")
-
-st.markdown("---")
-
-# --- Calculation and Results ---
-if st.button("Calculate Difference", use_container_width=True):
-    try:
-        with st.spinner("Fetching latest prices..."):
-            fut = yf.Ticker(futures_symbol)
-            fut_price = fut.history(period="1d", interval="1m").Close.dropna().iloc[-1]
-
-            if not cfd_symbol:
-                if manual_cfd_price is None or manual_cfd_price == 0:
-                    raise ValueError("Manual CFD price required for this instrument.")
-                cfd_price = manual_cfd_price
+    with col1:
+        st.markdown("#### Futures Price")
+        futures_mode = st.radio(
+            "Source",
+            ["Auto-fetch", "Manual"],
+            key="futures_mode",
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+        
+        if futures_mode == "Auto-fetch":
+            if futures_symbol:
+                cache_key = f"fut_price_{futures_symbol}"
+                timestamp_key = f"fut_time_{futures_symbol}"
+                
+                # Check if cache is still valid (30 seconds)
+                cache_valid = False
+                if cache_key in st.session_state and timestamp_key in st.session_state:
+                    cache_age = time.time() - st.session_state[timestamp_key]
+                    cache_valid = cache_age < CACHE_TIMEOUT
+                
+                if not cache_valid:
+                    with st.spinner("Fetching..."):
+                        try:
+                            fut_price_preview = yf.Ticker(futures_symbol).history(period="1d", interval="1m").Close.dropna().iloc[-1]
+                            st.session_state[cache_key] = fut_price_preview
+                            st.session_state[timestamp_key] = time.time()
+                        except:
+                            st.session_state[cache_key] = None
+                            st.session_state[timestamp_key] = time.time()
+                
+                if st.session_state[cache_key] is not None:
+                    st.success(f"**${st.session_state[cache_key]:,.6f}**")
+                else:
+                    st.error("Fetch failed")
+                manual_futures_price = None
             else:
-                cfd = yf.Ticker(cfd_symbol)
-                cfd_price = cfd.history(period="1d", interval="1m").Close.dropna().iloc[-1]
+                st.warning("No market data")
+                manual_futures_price = None
+        else:
+            manual_futures_price = st.number_input(
+                "Enter price:",
+                min_value=0.0,
+                step=0.000001,
+                format="%.6f",
+                placeholder="0.000000",
+                label_visibility="collapsed"
+            )
+            if manual_futures_price > 0:
+                st.info(f"**${manual_futures_price:,.6f}**")
+
+    with col2:
+        st.markdown("#### CFD Price")
+        cfd_mode = st.radio(
+            "Source",
+            ["Auto-fetch", "Manual"],
+            key="cfd_mode",
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+        
+        if cfd_mode == "Auto-fetch":
+            if cfd_symbol:
+                cache_key = f"cfd_price_{cfd_symbol}"
+                timestamp_key = f"cfd_time_{cfd_symbol}"
+                
+                # Check if cache is still valid (30 seconds)
+                cache_valid = False
+                if cache_key in st.session_state and timestamp_key in st.session_state:
+                    cache_age = time.time() - st.session_state[timestamp_key]
+                    cache_valid = cache_age < CACHE_TIMEOUT
+                
+                if not cache_valid:
+                    with st.spinner("Fetching..."):
+                        try:
+                            cfd_price_preview = yf.Ticker(cfd_symbol).history(period="1d", interval="1m").Close.dropna().iloc[-1]
+                            st.session_state[cache_key] = cfd_price_preview
+                            st.session_state[timestamp_key] = time.time()
+                        except:
+                            st.session_state[cache_key] = None
+                            st.session_state[timestamp_key] = time.time()
+                
+                if st.session_state[cache_key] is not None:
+                    st.success(f"**${st.session_state[cache_key]:,.6f}**")
+                else:
+                    st.error("Fetch failed")
+                manual_cfd_price = None
+            else:
+                st.warning("Manual entry needed")
+                manual_cfd_price = st.number_input(
+                    "Enter price:",
+                    min_value=0.0,
+                    step=0.000001,
+                    format="%.6f",
+                    key="cfd_manual_auto",
+                    placeholder="0.000000",
+                    label_visibility="collapsed"
+                )
+                if manual_cfd_price > 0:
+                    st.info(f"**${manual_cfd_price:,.6f}**")
+        else:
+            manual_cfd_price = st.number_input(
+                "Enter price:",
+                min_value=0.0,
+                step=0.000001,
+                format="%.6f",
+                key="cfd_manual_manual",
+                placeholder="0.000000",
+                label_visibility="collapsed"
+            )
+            if manual_cfd_price > 0:
+                st.info(f"**${manual_cfd_price:,.6f}**")
+
+    # Refresh button for fetched data
+    if st.button("Refresh Data", use_container_width=True, type="secondary"):
+        # Clear all cached prices and timestamps
+        keys_to_remove = [key for key in st.session_state.keys() if key.startswith(('fut_price_', 'cfd_price_', 'fut_time_', 'cfd_time_'))]
+        for key in keys_to_remove:
+            del st.session_state[key]
+        st.rerun()
+
+# --- Trading Levels Section ---
+st.markdown("## 3. Trading Levels")
+with st.container(border=True):
+    st.markdown("**Enter your planned futures levels to get adjusted CFD levels.**")
+    
+    col_entry, col_sl, col_profit = st.columns(3, gap="medium")
+    
+    with col_entry:
+        entry_price = st.number_input(
+            "Entry Price",
+            min_value=0.0,
+            step=0.000001,
+            format="%.6f",
+            placeholder="0.000000",
+            help="Your planned entry price for futures"
+        )
+    
+    with col_sl:
+        stop_loss = st.number_input(
+            "Stop Loss",
+            min_value=0.0,
+            step=0.000001,
+            format="%.6f",
+            placeholder="0.000000",
+            help="Your planned stop loss for futures"
+        )
+    
+    with col_profit:
+        profit = st.number_input(
+            "Take Profit",
+            min_value=0.0,
+            step=0.000001,
+            format="%.6f",
+            placeholder="0.000000",
+            help="Your planned profit target for futures"
+        )
+    
+    # Calculate button
+    calculate_clicked = st.button(
+        "Calculate Delta",
+        use_container_width=True,
+        type="primary",
+        help="Calculate the price difference and adjusted CFD levels"
+    )
+
+# --- Results Section ---
+if calculate_clicked:
+    try:
+        with st.spinner("Calculating..."):
+            # Get futures price based on selected method
+            if futures_mode == "Auto-fetch":
+                if not futures_symbol:
+                    raise ValueError("No futures symbol available for auto-fetch.")
+                fut_price = st.session_state.get(f"fut_price_{futures_symbol}")
+                if fut_price is None:
+                    raise ValueError("Futures price not fetched. Please refresh data.")
+            else:
+                if manual_futures_price is None or manual_futures_price == 0:
+                    raise ValueError("Please enter a futures price for manual entry.")
+                fut_price = manual_futures_price
+
+            # Get CFD price based on selected method
+            if cfd_mode == "Auto-fetch":
+                if not cfd_symbol:
+                    raise ValueError("No CFD symbol available for auto-fetch.")
+                cfd_price = st.session_state.get(f"cfd_price_{cfd_symbol}")
+                if cfd_price is None:
+                    raise ValueError("CFD price not fetched. Please refresh data.")
                 if cfd_symbol in inverted_pairs and cfd_price != 0:
                     cfd_price = 1 / cfd_price
-
-        spread = abs(fut_price - cfd_price) # Absolute value
-
-        st.success("Prices fetched successfully!")
-        st.markdown("### 📊 Price Comparison")
-        col_fut, col_cfd, col_spread = st.columns(3)
-        col_fut.metric(label="Futures Price", value=f"{fut_price:,.4f}")
-        col_cfd.metric(label="CFD Price", value=f"{cfd_price:,.4f}")
-        col_spread.metric(label="Spread (Futures - CFD)", value=f"{spread:,.4f}")
-
-        # --- Adjusted Trade Levels ---
-        if entry_price > 0 or stop_loss > 0 or profit > 0:
-            st.markdown("### 🧮 Adjusted CFD Levels")
-            st.info("These are your CFD-equivalent levels after applying the spread.")
-
-            if cfd_symbol in inverted_pairs and cfd_price != 0:
-                # For inverted pairs, apply spread the convert futures entry/SL/profit to CFD price by 1/value
-                adj_entry = 1 / (entry_price - spread) if entry_price > 0 else None
-                adj_sl = 1 / (stop_loss - spread) if stop_loss > 0 else None
-                adj_profit = 1 / (profit - spread) if profit > 0 else None
             else:
-                adj_entry = entry_price - spread if entry_price > 0 else None
-                adj_sl = stop_loss - spread if stop_loss > 0 else None
-                adj_profit = profit - spread if profit > 0 else None
+                if manual_cfd_price is None or manual_cfd_price == 0:
+                    raise ValueError("Please enter a CFD price for manual entry.")
+                cfd_price = manual_cfd_price
 
-            col_adj_entry, col_adj_sl, col_adj_profit = st.columns(3)
-            col_adj_entry.metric("Adjusted Entry", f"{adj_entry:,.4f}" if adj_entry is not None else "-")
-            col_adj_sl.metric("Adjusted Stop Loss", f"{adj_sl:,.4f}" if adj_sl is not None else "-")
-            col_adj_profit.metric("Adjusted Profit", f"{adj_profit:,.4f}" if adj_profit is not None else "-")
+        spread = abs(fut_price - cfd_price)
+        spread_percentage = (spread / fut_price) * 100 if fut_price != 0 else 0
+
+        st.markdown("## Results")
+        with st.container(border=True):
+            # Price comparison with better visual hierarchy
+            st.markdown("### Price Comparison")
+            col_fut, col_cfd, col_spread = st.columns(3, gap="medium")
+            
+            with col_fut:
+                st.metric(
+                    label="Futures Price",
+                    value=f"${fut_price:,.6f}",
+                    help="Current futures contract price"
+                )
+            
+            with col_cfd:
+                st.metric(
+                    label="CFD Price",
+                    value=f"${cfd_price:,.6f}",
+                    help="Current CFD equivalent price"
+                )
+            
+            with col_spread:
+                st.metric(
+                    label="Price Spread",
+                    value=f"${spread:,.6f}",
+                    delta=f"{spread_percentage:.2f}%",
+                    help="Absolute difference between futures and CFD"
+                )
+
+            # Show adjusted levels only if user entered any trading levels
+            if entry_price > 0 or stop_loss > 0 or profit > 0:
+                st.markdown("### Adjusted CFD Levels")
+                st.info("Use these adjusted levels for your CFD trades to match your futures strategy.")
+
+                if cfd_symbol in inverted_pairs and cfd_price != 0:
+                    adj_entry = 1 / (entry_price - spread) if entry_price > 0 else None
+                    adj_sl = 1 / (stop_loss - spread) if stop_loss > 0 else None
+                    adj_profit = 1 / (profit - spread) if profit > 0 else None
+                else:
+                    adj_entry = entry_price - spread if entry_price > 0 else None
+                    adj_sl = stop_loss - spread if stop_loss > 0 else None
+                    adj_profit = profit - spread if profit > 0 else None
+
+                col_adj_entry, col_adj_sl, col_adj_profit = st.columns(3, gap="medium")
+                
+                with col_adj_entry:
+                    if adj_entry is not None and entry_price > 0:
+                        delta_entry = adj_entry - entry_price
+                        st.metric(
+                            "Adjusted Entry",
+                            f"${adj_entry:,.6f}",
+                            delta=f"${delta_entry:,.6f}",
+                            help="CFD entry price adjusted for spread"
+                        )
+                    else:
+                        st.metric("Adjusted Entry", "—", help="No entry price set")
+                
+                with col_adj_sl:
+                    if adj_sl is not None and stop_loss > 0:
+                        delta_sl = adj_sl - stop_loss
+                        st.metric(
+                            "Adjusted Stop Loss",
+                            f"${adj_sl:,.6f}",
+                            delta=f"${delta_sl:,.6f}",
+                            help="CFD stop loss adjusted for spread"
+                        )
+                    else:
+                        st.metric("Adjusted Stop Loss", "—", help="No stop loss set")
+                
+                with col_adj_profit:
+                    if adj_profit is not None and profit > 0:
+                        delta_profit = adj_profit - profit
+                        st.metric(
+                            "Adjusted Take Profit",
+                            f"${adj_profit:,.6f}",
+                            delta=f"${delta_profit:,.6f}",
+                            help="CFD take profit adjusted for spread"
+                        )
+                    else:
+                        st.metric("Adjusted Take Profit", "—", help="No take profit set")
 
     except Exception as e:
-        st.error(f"Error fetching data: {e}")
+        st.error(f"Calculation Error: {str(e)}")
+        st.markdown("**Troubleshooting:**")
+        st.markdown("• Ensure prices are entered or fetched successfully before calculating.")
+        st.markdown("• Try refreshing the data if auto-fetch fails.")
 
-st.markdown("""
----
-#### Example Categories
-- **Index Futures:** S&P 500 E-mini (ES=F), Nasdaq 100 E-mini (NQ=F), Dow Jones E-mini (YM=F), Russell 2000 E-mini (RTY=F), Nikkei 225 (NI=F)
-- **Metals:** Gold (GC=F), Silver (SI=F), Platinum (PL=F), Palladium (PA=F), Copper (HG=F)
-- **Energy:** Crude Oil WTI (CL=F), Brent Crude Oil (BZ=F), Natural Gas (NG=F)
-- **Agriculturals:** Corn (ZC=F), Soybeans (ZS=F), Wheat (ZW=F), Oats (ZO=F), Rough Rice (ZR=F), Soybean Meal (ZM=F), Soybean Oil (ZL=F), Coffee (KC=F), Cocoa (CC=F), Cotton (CT=F), Sugar (SB=F), Orange Juice (OJ=F), Lumber (LBS=F), Feeder Cattle (GF=F), Lean Hogs (HE=F), Live Cattle (LE=F)
-- **Currency Futures:** Euro (6E=F), British Pound (6B=F), Japanese Yen (6J=F), Australian Dollar (6A=F), Canadian Dollar (6C=F), Swiss Franc (6S=F), Mexican Peso (6M=F)
-- **Crypto:** Bitcoin Futures (BTC=F), Ethereum Futures (ETH=F)
-""")
+st.markdown("---")
+
+# Footer with better organization
+st.markdown("## Supported Instruments")
+
+with st.expander("View all available instruments", expanded=False):
+    col_left, col_right = st.columns(2)
+    
+    with col_left:
+        st.markdown("**Indices & Currencies**")
+        st.markdown("• S&P 500, Nasdaq 100, Dow Jones")
+        st.markdown("• EUR, GBP, JPY, AUD, CAD")
+        st.markdown("• Bitcoin, Ethereum futures")
+        
+        st.markdown("**Metals**")
+        st.markdown("• Gold, Silver, Platinum")
+        st.markdown("• Palladium, Copper")
+    
+    with col_right:
+        st.markdown("**Energy**")
+        st.markdown("• Crude Oil WTI, Brent Crude")
+        st.markdown("• Natural Gas")
+        
+        st.markdown("**Agriculturals**")
+        st.markdown("• Corn, Soybeans, Wheat")
+        st.markdown("• Coffee, Cocoa, Sugar")
+        st.markdown("• Livestock & other commodities")
