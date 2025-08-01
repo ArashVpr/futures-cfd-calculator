@@ -74,6 +74,16 @@ symbol_categories = {
 # Define inverted pairs (when CFD is quoted inversely)
 inverted_pairs = {"JPY=X", "CAD=X", "CHF=X", "MXN=X"}  # inverse CFD quotes
 
+# Define decimal precision for different asset categories
+decimal_precision = {
+    "Currency Futures": 5,  # Forex typically uses 4-5 decimals
+    "Index Futures": 2,     # Stock indices typically use 2 decimals  
+    "Metals": 2,            # Gold, Silver etc. typically use 2 decimals
+    "Energy": 2,            # Oil, Gas etc. typically use 2 decimals
+    "Agriculturals": 3,     # Commodities typically use 2-3 decimals
+    "Crypto": 2             # Crypto typically uses 2 decimals for major pairs
+}
+
 # Combine into one lookup map
 symbol_map = {}
 symbol_lookup = {}
@@ -82,6 +92,13 @@ for category in symbol_categories.values():
         ticker = name_with_ticker.split('(')[-1].replace(')', '')
         symbol_map[name_with_ticker] = cfd
         symbol_lookup[name_with_ticker] = ticker
+
+# Helper function to format price based on category
+def format_price(price, category):
+    if price is None:
+        return "—"
+    decimals = decimal_precision.get(category, 6)  # Default to 6 if category not found
+    return f"{price:,.{decimals}f}"
 
 # --- Symbol input ---
 st.markdown("## 1. Select Instrument")
@@ -143,7 +160,7 @@ with st.container(border=True):
                             st.session_state[timestamp_key] = time.time()
                 
                 if st.session_state[cache_key] is not None:
-                    st.success(f"**{st.session_state[cache_key]:,.6f}**")
+                    st.success(f"**{format_price(st.session_state[cache_key], selected_category)}**")
                 else:
                     st.error("Fetch failed")
                 manual_futures_price = None
@@ -160,7 +177,7 @@ with st.container(border=True):
                 label_visibility="collapsed"
             )
             if manual_futures_price > 0:
-                st.info(f"**{manual_futures_price:,.6f}**")
+                st.info(f"**{format_price(manual_futures_price, selected_category)}**")
 
     with col2:
         st.markdown("#### CFD Price")
@@ -194,7 +211,7 @@ with st.container(border=True):
                             st.session_state[timestamp_key] = time.time()
                 
                 if st.session_state[cache_key] is not None:
-                    st.success(f"**{st.session_state[cache_key]:,.6f}**")
+                    st.success(f"**{format_price(st.session_state[cache_key], selected_category)}**")
                 else:
                     st.error("Fetch failed")
                 manual_cfd_price = None
@@ -210,7 +227,7 @@ with st.container(border=True):
                     label_visibility="collapsed"
                 )
                 if manual_cfd_price > 0:
-                    st.info(f"**{manual_cfd_price:,.6f}**")
+                    st.info(f"**{format_price(manual_cfd_price, selected_category)}**")
         else:
             manual_cfd_price = st.number_input(
                 "Enter price:",
@@ -222,7 +239,7 @@ with st.container(border=True):
                 label_visibility="collapsed"
             )
             if manual_cfd_price > 0:
-                st.info(f"**{manual_cfd_price:,.6f}**")
+                st.info(f"**{format_price(manual_cfd_price, selected_category)}**")
 
     # Refresh button for fetched data
     if st.button("Refresh Data", use_container_width=True, type="secondary"):
@@ -319,21 +336,21 @@ if calculate_clicked:
             with col_fut:
                 st.metric(
                     label="Futures Price",
-                    value=f"{fut_price:,.6f}",
+                    value=format_price(fut_price, selected_category),
                     help="Current futures contract price"
                 )
             
             with col_cfd:
                 st.metric(
                     label="CFD Price",
-                    value=f"{cfd_price:,.6f}",
+                    value=format_price(cfd_price, selected_category),
                     help="Current CFD equivalent price"
                 )
             
             with col_spread:
                 st.metric(
                     label="Price Difference",
-                    value=f"{spread:,.6f}",
+                    value=format_price(spread, selected_category),
                     help="Absolute difference between futures and CFD"
                 )
 
@@ -357,7 +374,7 @@ if calculate_clicked:
                     if adj_entry is not None and entry_price > 0:
                         st.metric(
                             "Adjusted Entry",
-                            f"{adj_entry:,.6f}",
+                            format_price(adj_entry, selected_category),
                             help="CFD entry price adjusted for spread"
                         )
                     else:
@@ -367,7 +384,7 @@ if calculate_clicked:
                     if adj_sl is not None and stop_loss > 0:
                         st.metric(
                             "Adjusted Stop Loss",
-                            f"{adj_sl:,.6f}",
+                            format_price(adj_sl, selected_category),
                             help="CFD stop loss adjusted for spread"
                         )
                     else:
@@ -377,7 +394,7 @@ if calculate_clicked:
                     if adj_profit is not None and profit > 0:
                         st.metric(
                             "Adjusted Take Profit",
-                            f"{adj_profit:,.6f}",
+                            format_price(adj_profit, selected_category),
                             help="CFD take profit adjusted for spread"
                         )
                     else:
