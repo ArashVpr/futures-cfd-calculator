@@ -319,22 +319,21 @@ if calculate_clicked:
             with col_fut:
                 st.metric(
                     label="Futures Price",
-                    value=f"${fut_price:,.6f}",
+                    value=f"{fut_price:,.6f}",
                     help="Current futures contract price"
                 )
             
             with col_cfd:
                 st.metric(
                     label="CFD Price",
-                    value=f"${cfd_price:,.6f}",
+                    value=f"{cfd_price:,.6f}",
                     help="Current CFD equivalent price"
                 )
             
             with col_spread:
                 st.metric(
-                    label="Price Spread",
-                    value=f"${spread:,.6f}",
-                    delta=f"{spread_percentage:.2f}%",
+                    label="Price Difference",
+                    value=f"{spread:,.6f}",
                     help="Absolute difference between futures and CFD"
                 )
 
@@ -356,11 +355,9 @@ if calculate_clicked:
                 
                 with col_adj_entry:
                     if adj_entry is not None and entry_price > 0:
-                        delta_entry = adj_entry - entry_price
                         st.metric(
                             "Adjusted Entry",
-                            f"${adj_entry:,.6f}",
-                            delta=f"${delta_entry:,.6f}",
+                            f"{adj_entry:,.6f}",
                             help="CFD entry price adjusted for spread"
                         )
                     else:
@@ -368,11 +365,9 @@ if calculate_clicked:
                 
                 with col_adj_sl:
                     if adj_sl is not None and stop_loss > 0:
-                        delta_sl = adj_sl - stop_loss
                         st.metric(
                             "Adjusted Stop Loss",
-                            f"${adj_sl:,.6f}",
-                            delta=f"${delta_sl:,.6f}",
+                            f"{adj_sl:,.6f}",
                             help="CFD stop loss adjusted for spread"
                         )
                     else:
@@ -380,11 +375,9 @@ if calculate_clicked:
                 
                 with col_adj_profit:
                     if adj_profit is not None and profit > 0:
-                        delta_profit = adj_profit - profit
                         st.metric(
                             "Adjusted Take Profit",
-                            f"${adj_profit:,.6f}",
-                            delta=f"${delta_profit:,.6f}",
+                            f"{adj_profit:,.6f}",
                             help="CFD take profit adjusted for spread"
                         )
                     else:
