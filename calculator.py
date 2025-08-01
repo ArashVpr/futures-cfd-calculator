@@ -7,6 +7,7 @@ CACHE_TIMEOUT = 30
 
 st.set_page_config(
     page_title="Futures vs CFD Calculator", 
+    page_icon="📊",  # You can use emoji or path to image file
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -395,8 +396,6 @@ if calculate_clicked:
                 st.markdown("### 🎯 Your CFD Trading Levels")
                 
                 # Enhanced info box with better styling
-                # st.success("✅ **Ready to Trade!** Use these exact levels for your CFD positions to match your futures strategy.")
-
                 if cfd_symbol in inverted_pairs and cfd_price != 0:
                     adj_entry = 1 / (entry_price - spread) if entry_price > 0 else None
                     adj_sl = 1 / (stop_loss - spread) if stop_loss > 0 else None
