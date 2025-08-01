@@ -402,30 +402,3 @@ if calculate_clicked:
         st.markdown("• Ensure prices are entered or fetched successfully before calculating.")
         st.markdown("• Try refreshing the data if auto-fetch fails.")
 
-st.markdown("---")
-
-# Footer with better organization
-st.markdown("## Supported Instruments")
-
-with st.expander("View all available instruments", expanded=False):
-    col_left, col_right = st.columns(2)
-    
-    with col_left:
-        st.markdown("**Indices & Currencies**")
-        st.markdown("• S&P 500, Nasdaq 100, Dow Jones")
-        st.markdown("• EUR, GBP, JPY, AUD, CAD")
-        st.markdown("• Bitcoin, Ethereum futures")
-        
-        st.markdown("**Metals**")
-        st.markdown("• Gold, Silver, Platinum")
-        st.markdown("• Palladium, Copper")
-    
-    with col_right:
-        st.markdown("**Energy**")
-        st.markdown("• Crude Oil WTI, Brent Crude")
-        st.markdown("• Natural Gas")
-        
-        st.markdown("**Agriculturals**")
-        st.markdown("• Corn, Soybeans, Wheat")
-        st.markdown("• Coffee, Cocoa, Sugar")
-        st.markdown("• Livestock & other commodities")
