@@ -181,12 +181,18 @@ with st.container(border=True):
 
     with col2:
         st.markdown("#### CFD Price")
+        
+        # Check if CFD symbol is available to determine default radio button state
+        cfd_available = bool(cfd_symbol)
+        default_cfd_mode = "Auto-fetch" if cfd_available else "Manual"
+        
         cfd_mode = st.radio(
             "Source",
             ["Auto-fetch", "Manual"],
             key="cfd_mode",
             horizontal=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            index=0 if cfd_available else 1  # Auto-select Manual if no CFD symbol
         )
         
         if cfd_mode == "Auto-fetch":
@@ -216,18 +222,8 @@ with st.container(border=True):
                     st.error("Fetch failed")
                 manual_cfd_price = None
             else:
-                st.warning("Manual entry needed")
-                manual_cfd_price = st.number_input(
-                    "Enter price:",
-                    min_value=0.0,
-                    step=0.000001,
-                    format="%.6f",
-                    key="cfd_manual_auto",
-                    placeholder="0.000000",
-                    label_visibility="collapsed"
-                )
-                if manual_cfd_price > 0:
-                    st.info(f"**{format_price(manual_cfd_price, selected_category)}**")
+                st.warning("No CFD data available. Add manually.")
+                manual_cfd_price = None
         else:
             manual_cfd_price = st.number_input(
                 "Enter price:",
