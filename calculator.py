@@ -162,7 +162,6 @@ with st.container(border=True):
     futures_symbol = symbol_lookup.get(futures_label, futures_label)
     cfd_symbol = symbol_map.get(futures_label, "")
     
-    st.info(f"**Associated CFD:** `{cfd_symbol if cfd_symbol else 'N/A'}`")
 
 # --- Price Configuration ---
 st.markdown("## 2. Configure Prices")
