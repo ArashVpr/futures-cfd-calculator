@@ -143,7 +143,7 @@ with st.container(border=True):
                             st.session_state[timestamp_key] = time.time()
                 
                 if st.session_state[cache_key] is not None:
-                    st.success(f"**${st.session_state[cache_key]:,.6f}**")
+                    st.success(f"**{st.session_state[cache_key]:,.6f}**")
                 else:
                     st.error("Fetch failed")
                 manual_futures_price = None
@@ -160,7 +160,7 @@ with st.container(border=True):
                 label_visibility="collapsed"
             )
             if manual_futures_price > 0:
-                st.info(f"**${manual_futures_price:,.6f}**")
+                st.info(f"**{manual_futures_price:,.6f}**")
 
     with col2:
         st.markdown("#### CFD Price")
@@ -194,7 +194,7 @@ with st.container(border=True):
                             st.session_state[timestamp_key] = time.time()
                 
                 if st.session_state[cache_key] is not None:
-                    st.success(f"**${st.session_state[cache_key]:,.6f}**")
+                    st.success(f"**{st.session_state[cache_key]:,.6f}**")
                 else:
                     st.error("Fetch failed")
                 manual_cfd_price = None
@@ -210,7 +210,7 @@ with st.container(border=True):
                     label_visibility="collapsed"
                 )
                 if manual_cfd_price > 0:
-                    st.info(f"**${manual_cfd_price:,.6f}**")
+                    st.info(f"**{manual_cfd_price:,.6f}**")
         else:
             manual_cfd_price = st.number_input(
                 "Enter price:",
@@ -222,7 +222,7 @@ with st.container(border=True):
                 label_visibility="collapsed"
             )
             if manual_cfd_price > 0:
-                st.info(f"**${manual_cfd_price:,.6f}**")
+                st.info(f"**{manual_cfd_price:,.6f}**")
 
     # Refresh button for fetched data
     if st.button("Refresh Data", use_container_width=True, type="secondary"):
