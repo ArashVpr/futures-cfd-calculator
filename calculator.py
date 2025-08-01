@@ -20,55 +20,97 @@ st.markdown("---")
 # --- Symbol Categories and Mappings ---
 symbol_categories = {
     "Currency Futures": {
-        "Euro (6E=F)": "EURUSD=X",
-        "British Pound (6B=F)": "GBPUSD=X",
-        "Swiss Franc (6S=F)": "CHF=X",
-        "Japanese Yen (6J=F)": "JPY=X",
-        "Australian Dollar (6A=F)": "AUDUSD=X",
-        "New Zealand Dollar (6N=F)": "NZDUSD=X",
-        "Canadian Dollar (6C=F)": "CAD=X",
-        "Mexican Peso (6M=F)": "MXN=X",
+        "Euro": "EURUSD=X",
+        "British Pound": "GBPUSD=X",
+        "Swiss Franc": "CHF=X",
+        "Japanese Yen": "JPY=X",
+        "Australian Dollar": "AUDUSD=X",
+        "New Zealand Dollar": "NZDUSD=X",
+        "Canadian Dollar": "CAD=X",
+        "Mexican Peso": "MXN=X",
     },
     "Index Futures": {
-        "S&P 500 E-mini (ES=F)": "^GSPC",
-        "Nasdaq 100 E-mini (NQ=F)": "^NDX",
-        "Dow Jones E-mini (YM=F)": "^DJI",
-        "Russell 2000 E-mini (RTY=F)": "^RUT",
+        "S&P 500 E-mini": "^GSPC",
+        "Nasdaq 100 E-mini": "^NDX",
+        "Dow Jones E-mini": "^DJI",
+        "Russell 2000 E-mini": "^RUT",
     },
     "Metals": {
-        "Gold (GC=F)": "",
-        "Silver (SI=F)": "",
-        "Platinum (PL=F)": "",
-        "Palladium (PA=F)": "",
-        "Copper (HG=F)": "",
+        "Gold": "",
+        "Silver": "",
+        "Platinum": "",
+        "Palladium": "",
+        "Copper": "",
     },
     "Energy": {
-        "Crude Oil WTI (CL=F)": "",
-        "Brent Crude Oil (BZ=F)": "",
-        "Natural Gas (NG=F)": "",
+        "Crude Oil WTI": "",
+        "Brent Crude Oil": "",
+        "Natural Gas": "",
     },
     "Agriculturals": {
-        "Corn (ZC=F)": "",
-        "Soybeans (ZS=F)": "",
-        "Wheat (ZW=F)": "",
-        "Oats (ZO=F)": "",
-        "Rough Rice (ZR=F)": "",
-        "Soybean Meal (ZM=F)": "",
-        "Soybean Oil (ZL=F)": "",
-        "Coffee (KC=F)": "",
-        "Cocoa (CC=F)": "",
-        "Cotton (CT=F)": "",
-        "Sugar (SB=F)": "",
-        "Orange Juice (OJ=F)": "",
-        "Lumber (LBS=F)": "",
-        "Feeder Cattle (GF=F)": "",
-        "Lean Hogs (HE=F)": "",
-        "Live Cattle (LE=F)": "",
+        "Corn": "",
+        "Soybeans": "",
+        "Wheat": "",
+        "Oats": "",
+        "Rough Rice": "",
+        "Soybean Meal": "",
+        "Soybean Oil": "",
+        "Coffee": "",
+        "Cocoa": "",
+        "Cotton": "",
+        "Sugar": "",
+        "Orange Juice": "",
+        "Lumber": "",
+        "Feeder Cattle": "",
+        "Lean Hogs": "",
+        "Live Cattle": "",
     },
     "Crypto": {
-        "Bitcoin Futures (BTC=F)": "BTC-USD",
-        "Ethereum Futures (ETH=F)": "ETH-USD",
+        "Bitcoin Futures": "BTC-USD",
+        "Ethereum Futures": "ETH-USD",
     }
+}
+
+# Futures ticker symbol mappings
+futures_tickers = {
+    "Euro": "6E=F",
+    "British Pound": "6B=F",
+    "Swiss Franc": "6S=F",
+    "Japanese Yen": "6J=F",
+    "Australian Dollar": "6A=F",
+    "New Zealand Dollar": "6N=F",
+    "Canadian Dollar": "6C=F",
+    "Mexican Peso": "6M=F",
+    "S&P 500 E-mini": "ES=F",
+    "Nasdaq 100 E-mini": "NQ=F",
+    "Dow Jones E-mini": "YM=F",
+    "Russell 2000 E-mini": "RTY=F",
+    "Gold": "GC=F",
+    "Silver": "SI=F",
+    "Platinum": "PL=F",
+    "Palladium": "PA=F",
+    "Copper": "HG=F",
+    "Crude Oil WTI": "CL=F",
+    "Brent Crude Oil": "BZ=F",
+    "Natural Gas": "NG=F",
+    "Corn": "ZC=F",
+    "Soybeans": "ZS=F",
+    "Wheat": "ZW=F",
+    "Oats": "ZO=F",
+    "Rough Rice": "ZR=F",
+    "Soybean Meal": "ZM=F",
+    "Soybean Oil": "ZL=F",
+    "Coffee": "KC=F",
+    "Cocoa": "CC=F",
+    "Cotton": "CT=F",
+    "Sugar": "SB=F",
+    "Orange Juice": "OJ=F",
+    "Lumber": "LBS=F",
+    "Feeder Cattle": "GF=F",
+    "Lean Hogs": "HE=F",
+    "Live Cattle": "LE=F",
+    "Bitcoin Futures": "BTC=F",
+    "Ethereum Futures": "ETH=F",
 }
 
 # Define inverted pairs (when CFD is quoted inversely)
@@ -88,10 +130,9 @@ decimal_precision = {
 symbol_map = {}
 symbol_lookup = {}
 for category in symbol_categories.values():
-    for name_with_ticker, cfd in category.items():
-        ticker = name_with_ticker.split('(')[-1].replace(')', '')
-        symbol_map[name_with_ticker] = cfd
-        symbol_lookup[name_with_ticker] = ticker
+    for name, cfd in category.items():
+        symbol_map[name] = cfd
+        symbol_lookup[name] = futures_tickers.get(name, name)
 
 # Helper function to format price based on category
 def format_price(price, category):
